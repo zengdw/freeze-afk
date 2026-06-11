@@ -362,6 +362,7 @@ def main():
                 break
             if not result:
                 log("Session failed, retrying...")
+                return
 
             time.sleep(5)
         

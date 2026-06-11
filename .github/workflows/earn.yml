@@ -73,6 +73,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: aclclouds-screenshots
+          name: freezehost-screenshots
           path: screenshots/
           retention-days: 3
