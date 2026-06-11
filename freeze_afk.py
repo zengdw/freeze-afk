@@ -59,7 +59,7 @@ def wait_turnstile(sb, timeout=120):
     # 尝试将 Turnstile 滚动到页面中心
     try:
         sb.execute_script(
-            "var el = document.querySelector('iframe[src*=\"challenges.cloudflare.com\"]') || document.querySelector('.cf-turnstile');"
+            "var el = document.querySelector('#cf-turnstile-container');"
             "if (el) el.scrollIntoView({block: 'center'});"
         )
     except:
@@ -168,8 +168,8 @@ def click_start_afk(sb):
             element = sb.find_element("#afk-action-trigger")
             
             # Scroll element to the center of the viewport to prevent out-of-bounds errors
-            sb.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
-            time.sleep(1)
+            # sb.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+            # time.sleep(1)
             
             actions = ActionChains(sb.driver)
             size = element.size
