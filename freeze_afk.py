@@ -55,6 +55,16 @@ def log(msg):
 def wait_turnstile(sb, timeout=120):
     start = time.time()
     last_click = 0
+    
+    # 尝试将 Turnstile 滚动到页面中心
+    try:
+        sb.execute_script(
+            "var el = document.querySelector('iframe[src*=\"challenges.cloudflare.com\"]') || document.querySelector('.cf-turnstile');"
+            "if (el) el.scrollIntoView({block: 'center'});"
+        )
+    except:
+        pass
+
     while time.time() - start < timeout:
         try:
             val = sb.execute_script(
@@ -67,6 +77,12 @@ def wait_turnstile(sb, timeout=120):
         now = time.time()
         if now - last_click > 5:
             try:
+                # 再次滚动确保在可视区域
+                sb.execute_script(
+                    "var el = document.querySelector('iframe[src*=\"challenges.cloudflare.com\"]') || document.querySelector('.cf-turnstile');"
+                    "if (el) el.scrollIntoView({block: 'center'});"
+                )
+                time.sleep(1)
                 sb.uc_gui_click_captcha()
                 last_click = now
             except:
