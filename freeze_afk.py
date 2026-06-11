@@ -39,6 +39,10 @@ LOG_FILE = os.environ.get("LOG_FILE", "")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
+
+screenshot_end_path = "screenshots/earn_page_end.png"
+screenshot_start_path = "screenshots/earn_page_start.png"
+
 def log(msg):
     """带时间戳和实例编号的日志"""
     ts = time.strftime("%H:%M:%S")
@@ -300,26 +304,42 @@ def send_tg_message(start_time):
         return
 
     end_time = time.strftime("%Y-%m-%d %H:%M:%S")
-
-    sb.refresh()
-    time.sleep(5)
-    screenshot_path = "screenshots/earn_page.png"
-    try:
-        sb.save_screenshot(screenshot_path)
-        log("Screenshot saved to earn_page.png")
-    except Exception as e:
-        log("Failed to save screenshot: %s" % str(e))
+    start_pic = "screenshots/earn_start.png"
+    end_pic = "screenshots/earn_end.png"
 
     try:
         import requests
+        import json
         tg_msg = f"[FreezeHost] AFK finished!\nStart Time: {start_time}\nEnd Time: {end_time}\n"
-        if os.path.exists(screenshot_path):
-            with open(screenshot_path, "rb") as f:
-                requests.post(
-                    "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendPhoto",
-                    data={"chat_id": TELEGRAM_CHAT_ID, "caption": tg_msg},
-                    files={"photo": f}
-                )
+        
+        media = []
+        files = {}
+        
+        if os.path.exists(start_pic):
+            media.append({
+                "type": "photo",
+                "media": "attach://start_pic",
+                "caption": tg_msg
+            })
+            files["start_pic"] = open(start_pic, "rb")
+            
+        if os.path.exists(end_pic):
+            caption = tg_msg if not media else None
+            media.append({
+                "type": "photo",
+                "media": "attach://end_pic",
+                **({"caption": caption} if caption else {})
+            })
+            files["end_pic"] = open(end_pic, "rb")
+
+        if media:
+            r = requests.post(
+                "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMediaGroup",
+                data={"chat_id": TELEGRAM_CHAT_ID, "media": json.dumps(media)},
+                files=files
+            )
+            for f in files.values():
+                f.close()
         else:
             requests.post(
                 "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage",
@@ -333,6 +353,14 @@ def main():
     global global_start
 
     start_time = time.strftime("%Y-%m-%d %H:%M:%S")
+
+    # 清除旧的截图以防发送过期的图片
+    for f_path in ["screenshots/earn_start.png", "screenshots/earn_end.png"]:
+        if os.path.exists(f_path):
+            try:
+                os.remove(f_path)
+            except:
+                pass
 
     if not DISCORD_TOKEN:
         print("ERROR: DISCORD_TOKEN not set!")
@@ -368,6 +396,15 @@ def main():
             return
         log("Login OK!")
 
+        # 挂机成功开始后，保存开始截图
+        start_pic = "screenshots/earn_start.png"
+        try:
+            os.makedirs("screenshots", exist_ok=True)
+            sb.save_screenshot(start_pic, selector="body")
+            log("Start screenshot saved to %s" % start_pic)
+        except Exception as e:
+            log("Failed to save start screenshot: %s" % str(e))
+
         session = 0
         while True:
             if MAX_RUNTIME > 0 and (time.time() - global_start) > MAX_RUNTIME * 60:
@@ -385,6 +422,17 @@ def main():
                 log("Session failed, retrying...")
 
             time.sleep(5)
+
+        # 循环结束，在关闭浏览器前刷新页面并截取结束图
+        end_pic = "screenshots/earn_end.png"
+        try:
+            log("Refreshing and saving end screenshot...")
+            sb.refresh()
+            time.sleep(5)
+            sb.save_screenshot(end_pic, selector="body")
+            log("End screenshot saved to %s" % end_pic)
+        except Exception as e:
+            log("Failed to save end screenshot: %s" % str(e))
         
     send_tg_message(start_time)
     log("Done!")
