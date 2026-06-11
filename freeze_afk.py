@@ -9,6 +9,21 @@ import time
 import platform
 import sys
 
+
+def log(msg):
+    """带时间戳和实例编号的日志"""
+    ts = time.strftime("%H:%M:%S")
+    prefix = "[I%d]" % INSTANCE_ID if INSTANCE_ID else ""
+    line = "[%s] %s %s" % (ts, prefix, msg)
+    print(line, flush=True)
+    if LOG_FILE:
+        try:
+            with open(LOG_FILE, "a") as f:
+                f.write(line + "\n")
+        except:
+            pass
+
+
 # Linux 服务器上需要虚拟显示器
 if platform.system().lower() == "linux":
     from pyvirtualdisplay import Display
@@ -39,20 +54,6 @@ LOG_FILE = os.environ.get("LOG_FILE", "")
 # telegram token
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
-
-
-def log(msg):
-    """带时间戳和实例编号的日志"""
-    ts = time.strftime("%H:%M:%S")
-    prefix = "[I%d]" % INSTANCE_ID if INSTANCE_ID else ""
-    line = "[%s] %s %s" % (ts, prefix, msg)
-    print(line, flush=True)
-    if LOG_FILE:
-        try:
-            with open(LOG_FILE, "a") as f:
-                f.write(line + "\n")
-        except:
-            pass
 
 
 def wait_turnstile(sb, timeout=120):

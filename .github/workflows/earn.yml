@@ -57,6 +57,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install seleniumbase pyvirtualdisplay
+          seleniumbase install chrome
           seleniumbase install chromedriver
 
       - name: Run AFK Earn
